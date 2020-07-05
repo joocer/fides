@@ -3,11 +3,14 @@ import os
 from pathlib import Path
 
 class colors:
-    HEADER = '\033[95m'
+    CYAN = '\033[96m'
+    MAGENTA = '\033[95m'
     BLUE = '\033[94m'
-    GREEN = '\033[92m'
     YELLOW = '\033[93m'
+    GREEN = '\033[92m'
     RED = '\033[91m'
+    GREY = '\033[90m'
+
     END = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
@@ -17,8 +20,8 @@ def collect_results(data):
     return yara.CALLBACK_CONTINUE
 
 yara_directory = 'rules/'
-#test_subject_source = 'samples/www.google.com.txt'
-test_subject_source = 'samples/localhost.txt'
+test_subject_source = 'samples/www.google.com.txt'
+#test_subject_source = 'samples/localhost.txt'
 
 with open(test_subject_source, 'r') as file:
     test_subject = file.read().replace('\n', '')

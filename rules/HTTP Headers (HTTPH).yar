@@ -27,7 +27,7 @@ rule HTTPH002 : ASVSx_x CWEx
         author = "390516"
                 
     strings: 
-        $a = /strict-transport-security:[\s]max-age=[0-9]+/ nocase
+        $a = /strict-transport-security:[\s]max-age=[0-9]*?/ nocase
         
     condition: 
         $a
