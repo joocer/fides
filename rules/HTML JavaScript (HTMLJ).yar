@@ -12,7 +12,7 @@ rule HTMLJ001 : ASVSx_x CWEx
         version = 20200705
         description = "Script tags should include SRI"
         impact = 4
-        author = "390516"
+        author = "Joocer"
                 
     strings: 
         $has_script = /<script[\s\S]*?src="http(s)??:\/\/[\s\S]*?"[\s\S]*?>[\s\S]*?<\/script>/ nocase
@@ -28,7 +28,7 @@ rule HTMLJ002 : ASVSx_x CWEx
         version = 20200705
         description = "JavaScript Event triggers should not be in HTML tags"
         impact = 4
-        author = "390516"
+        author = "Joocer"
                 
     strings: 
         $has_on = /<\w*?[\s\S]*?\bon[\w]*?="[\s\S]*?>/ nocase
