@@ -4,7 +4,7 @@ YARA Test Framework
 
 ## Sample Output
 ~~~~
-Rule Set: CVE Must Fix List (CVE)
+Rule Set: CVE Banned List (CVE)
 ✓ PASS: (CVE001) Reports should not have Critical CVEs (CVE-2000-0001)
 ✓ PASS: (CVE002) Reports should not have Critical CVEs (CVE-2001-0002)
 
