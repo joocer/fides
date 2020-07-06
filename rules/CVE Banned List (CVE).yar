@@ -1,5 +1,5 @@
 /*
-    Tests for instances of MFL CVEs.
+    Tests for instances of Banned CVEs.
 */
 
 rule CVE001 : CVE_2000_0001
