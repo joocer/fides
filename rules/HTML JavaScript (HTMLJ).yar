@@ -9,10 +9,12 @@ rule HTMLJ001 : ASVSx_x CWEx
     // Passes if the two counts are the same - this will be prone to false +ves
 
     meta:
-        version = 20200705
-        description = "Script tags should include SRI"
-        impact = 4
         author = "Joocer"
+        description = "Script tags should include SRI"
+        timestamp = "2020-07-08"
+        version = "0.02"
+        importance = "medium"
+        reference = "https://github.com/joocer/ytf/blob/master/Refs/HTML%20JavaScript.md"
                 
     strings: 
         $has_script = /<script[\s\S]*?src="http(s)??:\/\/[\s\S]*?"[\s\S]*?>[\s\S]*?<\/script>/ nocase
@@ -25,10 +27,12 @@ rule HTMLJ001 : ASVSx_x CWEx
 rule HTMLJ002 : ASVSx_x CWEx
 {    
     meta:
-        version = 20200705
-        description = "JavaScript Event triggers should not be in HTML tags"
-        impact = 4
         author = "Joocer"
+        description = "JavaScript Event triggers should not be in HTML tags"
+        timestamp = "2020-07-08"
+        version = "0.02"
+        importance = "low"
+        reference = "https://github.com/joocer/ytf/blob/master/Refs/HTML%20JavaScript.md"
                 
     strings: 
         $has_on = /<\w*?[\s\S]*?\bon[\w]*?="[\s\S]*?>/ nocase
