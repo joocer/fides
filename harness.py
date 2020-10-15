@@ -78,7 +78,7 @@ for filename in os.listdir(yara_directory):
                 if print_results:
                     print(colors.RED + "✗ FAIL: ({}) {}".format(result['rule'], result['meta']['description']) + colors.END)
                 if file_writer:
-                    file_writer.write("{} (line:{}) - ({}) {}".format(args.input, result['line_number'], result['rule'], result['meta']['description']))
+                    file_writer.write("{} (line:{}) - ({}) {}\n".format(args.input, result['line_number'], result['rule'], result['meta']['description']))
                 fail_count = fail_count + 1
 
 if print_results:
