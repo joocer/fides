@@ -20,23 +20,16 @@ def read_file(filename, chunk_size=1024*1024, delimiter='\n'):
     """
     Reads an arbitrarily long file, line by line
     """
-    file = open(filename, 'r', encoding="utf8")
-    carry_forward = ''
-    chunk = 'INITIALIZED'
-    while len(chunk) > 0:
-        chunk = file.read(chunk_size)
-        chunk = carry_forward + chunk
+    with open(filename, 'r', encoding="utf8") as f:
         carry_forward = ''
-        lines = chunk.split(delimiter)
-        if len(lines) == 1:
-            carry_forward = chunk
-        else:
-            # the last line is likely to be incomplete, save it to carry forward
+        chunk = 'INITIALIZED'
+        while len(chunk) > 0:
+            chunk = carry_forward + f.read(chunk_size)
+            lines = chunk.split(delimiter)
             carry_forward = lines.pop()
             yield from lines
-    if len(carry_forward) > 0:
-        yield carry_forward
-    file.close()
+        if carry_forward:
+            yield carry_forward
 
 def collect_results(data):
     data['line_number'] = line_counter
