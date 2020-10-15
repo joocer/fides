@@ -1,5 +1,5 @@
+import argparse, sys, os
 import yara
-import os
 from pathlib import Path
 
 class colors:
@@ -15,41 +15,84 @@ class colors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
+def read_file(filename, chunk_size=1024*1024, delimiter='\n'):
+    """
+    Reads an arbitrarily long file, line by line
+    """
+    file = open(filename, 'r', encoding="utf8")
+    carry_forward = ''
+    chunk = 'INITIALIZED'
+    while len(chunk) > 0:
+        chunk = file.read(chunk_size)
+        chunk = carry_forward + chunk
+        carry_forward = ''
+        lines = chunk.split(delimiter)
+        if len(lines) == 1:
+            carry_forward = chunk
+        else:
+            # the last line is likely to be incomplete, save it to carry forward
+            carry_forward = lines.pop()
+            yield from lines
+    if len(carry_forward) > 0:
+        yield carry_forward
+    file.close()
+
 def collect_results(data):
+    data['line_number'] = line_counter
     results.append(data)
     return yara.CALLBACK_CONTINUE
-
-yara_directory = 'rules/'
-test_subject_source = 'samples/www.google.com.txt'
-#test_subject_source = 'samples/localhost.txt'
-
-with open(test_subject_source, 'r') as file:
-    test_subject = file.read().replace('\n', '')
 
 results = []
 fail_count = 0
 pass_count = 0
+yara_directory = 'rules/'
 
-def collect_results(data):
-    results.append(data)
-    data['subject'] = test_subject_source
-    return yara.CALLBACK_CONTINUE
+parser = argparse.ArgumentParser(prog='ytf')
+parser.add_argument('-i', '--input', help='File to execute tests against')
+parser.add_argument('-o', '--output', help='File to save results to')
+parser.add_argument('-q', '--quiet', help='Do not display test results to the screen')
+args = parser.parse_args()
+
+if not args.input:
+    print("no input file specified, ytf --help for help")
+    sys.exit(1)
+
+print_results = not args.quiet
+if not args.output and not print_results:
+    print("Invalid options, not outputting results")
+    sys.exit(1)
+
+file_writer = None
+if args.output:
+    file_writer = open(args.output, 'w', encoding='utf8')
+
+file_reader = read_file(args.input)
+line_counter = 0
 
 for filename in os.listdir(yara_directory):
     if filename.endswith(".yar"):
-        ruleset = Path(filename).stem
-        print('Rule Set:', ruleset)
         results = []
         rule = yara.compile(yara_directory + filename)
-        matches = rule.match(data = test_subject, callback=collect_results)
+        for line in file_reader:
+            line_counter += 1
+            matches = rule.match(data=line, callback=collect_results)
         
         for result in results:
             if result['matches']:
-                print(colors.GREEN + '✓ PASS:', '(' + result['rule'] + ')', result['meta']['description'] + colors.END)
                 pass_count = pass_count + 1
             else:
-                print(colors.RED + '✗ FAIL:', '(' + result['rule'] + ')', result['meta']['description'] + colors.END)
+                if print_results:
+                    print(colors.RED + "✗ FAIL: ({}) {}".format(result['rule'], result['meta']['description']) + colors.END)
+                if file_writer:
+                    file_writer.write("{} (line:{}) - ({}) {}".format(args.input, result['line_number'], result['rule'], result['meta']['description']))
                 fail_count = fail_count + 1
-        print()
 
-print('Test Summary:', colors.GREEN, pass_count, 'passed', colors.RED, fail_count, 'failed', colors.END)
+if print_results:
+    print('Test Summary:', colors.GREEN, pass_count, 'passed', colors.RED, fail_count, 'failed', colors.END)
+if file_writer:
+    file_writer.close()
+
+if fail_count > 0:
+    sys.exit(1)
+sys.exit(0)
