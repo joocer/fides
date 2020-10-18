@@ -2,6 +2,10 @@
 
 YARA Test Framework
 
+## Command Line
+
+ytf FILE -o results.txt
+
 ## Sample Output
 ~~~~
 Rule Set: CVE Banned List (CVE)
