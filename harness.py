@@ -17,11 +17,8 @@ def collect_results(data):
     """
     Collector for YARA test results
     """
-    try:
-        data['line_number'] = line_counter
-        data['line'] = line
-    except:
-        pass
+    data['line_number'] = line_counter
+    data['line'] = line
     results.append(data)
     return yara.CALLBACK_CONTINUE
 
