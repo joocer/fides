@@ -1,91 +1,159 @@
+#!/usr/bin/env python
 import argparse, sys, os
 import yara
 from pathlib import Path
+import os.path
+import warnings
 
-class colors:
-    CYAN = '\033[96m'
-    MAGENTA = '\033[95m'
-    BLUE = '\033[94m'
-    YELLOW = '\033[93m'
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    GREY = '\033[90m'
+"""
+Script to test a file, line by line, against a set of YARA rules.
 
-    END = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+Intended to be used as an unattended script, for example in a
+build or deployment pipeline.
+"""
 
-
-def read_file(filename, chunk_size=1024*1024, delimiter='\n'):
-    """
-    Reads an arbitrarily long file, line by line
-    """
-    with open(filename, 'r', encoding="utf8") as f:
-        carry_forward = ''
-        chunk = 'INITIALIZED'
-        while len(chunk) > 0:
-            chunk = carry_forward + f.read(chunk_size)
-            lines = chunk.split(delimiter)
-            carry_forward = lines.pop()
-            yield from lines
-        if carry_forward:
-            yield carry_forward
 
 def collect_results(data):
-    data['line_number'] = line_counter
+    """
+    Collector for YARA test results
+    """
+    try:
+        data['line_number'] = line_counter
+        data['line'] = line
+    except:
+        pass
     results.append(data)
     return yara.CALLBACK_CONTINUE
 
-results = []
-fail_count = 0
-pass_count = 0
-yara_directory = 'rules/'
 
-parser = argparse.ArgumentParser(prog='ytf')
-parser.add_argument('-i', '--input', help='File to execute tests against')
-parser.add_argument('-o', '--output', help='File to save results to')
-parser.add_argument('-q', '--quiet', help='Do not display test results to the screen')
-args = parser.parse_args()
+def get_input_stream():
+    """
+    If input is piped into this method, use that otherwise expect a
+    filename as the first command line parameter.
 
-if not args.input:
-    print("no input file specified, ytf --help for help")
-    sys.exit(1)
+    Return a stream (or None) for processing.
+    """
+    if not sys.stdin.isatty():
+        return sys.stdin                                          
+    else:
+        if len(sys.argv) > 1:
+            input_filename = sys.argv[1]
+            if os.path.isfile(input_filename):
+                return open(input_filename, 'r')
+    return None
 
-print_results = not args.quiet
-if not args.output and not print_results:
-    print("Invalid options, not outputting results")
-    sys.exit(1)
 
-file_writer = None
-if args.output:
-    file_writer = open(args.output, 'w', encoding='utf8')
+def get_parameter_value(label):
+    """
+    Look for labelled parameters in the command line, the pattern is:
 
-file_reader = read_file(args.input)
+        -a value
+
+    Where '-a' is the label, and 'value' is the label.
+    """
+    if label in sys.argv:
+        idx = sys.argv.index(label)
+        if (idx + 1) < len(sys.argv):
+            return sys.argv[idx + 1]
+    return None
+
+
+def get_rule_files():
+    rule_param = get_parameter_value('-r')
+    if rule_param and os.path.isfile(rule_param):
+        yield rule_param
+    elif rule_param:
+        print("Invalid rule file specified.")
+        print(f"Try '{sys.argv[0]} --help' for usage information.")
+        sys.exit(1)
+    else:
+        for filename in os.listdir('.'):
+            if filename.endswith(".yar"):
+                yield filename
+
+
+def format_result(result, verbose):
+    if verbose:
+        return f"line: {result['line_number']} - ({result['rule']}) {result['meta']['description']} - {result['line']}"
+    return f"line: {result['line_number']} - ({result['rule']}) {result['meta']['description']}"
+    
+
+verbose      = '--verbose' in sys.argv or '-v' in sys.argv
+show_help    = '-?' in sys.argv or '-h' in sys.argv or '--help' in sys.argv
+rule_file    = get_parameter_value('-r')
+out_file     = get_parameter_value('-o')
+input_stream = get_input_stream()
+rule_files   = get_rule_files()
+rules        = []
+results      = []
+fail_count   = 0
+pass_count   = 0
 line_counter = 0
+first_result = True
 
-for filename in os.listdir(yara_directory):
-    if filename.endswith(".yar"):
-        results = []
-        rule = yara.compile(yara_directory + filename)
-        for line in file_reader:
-            line_counter += 1
-            matches = rule.match(data=line, callback=collect_results)
-        
-        for result in results:
-            if result['matches']:
-                pass_count = pass_count + 1
-            else:
-                if print_results:
-                    print(colors.RED + "✗ FAIL: ({}) {}".format(result['rule'], result['meta']['description']) + colors.END)
-                if file_writer:
-                    file_writer.write("{} (line:{}) - ({}) {}\n".format(args.input, result['line_number'], result['rule'], result['meta']['description']))
-                fail_count = fail_count + 1
+# if help requested, display help and exit with no error
+if show_help:
+    print("Usage: test [FILE] [-o OUTPUTFILE] [-r RULEFILE] [--verbose] [--help]")
+    print("Test INPUTFILE against YARA rules in RULEFILE")
+    print("Example: test zap_results.csv -o zap_critical_results.csv")
+    print()
+    print("  FILE\t\tfile to test")
+    print("  -o\t\tfile to save results to, if omitted results printed to standard output")
+    print("  -r\t\tfile containing rules, if omitted all .yar files in current directort used")
+    print("  -v, --verbose\tflag to increase the amount of result information")
+    print("  -h, --help\tdisplay this help text and exit")
+    print()
+    print("When FILE is omitted, standard input in read.")
+    sys.exit(0)
 
-if print_results:
-    print('Test Summary:', colors.GREEN, pass_count, 'passed', colors.RED, fail_count, 'failed', colors.END)
+# if we have nothing to processes, error
+if not input_stream:
+    print("No input specified.")
+    print(f"Try '{sys.argv[0]} --help' for usage information.")
+    sys.exit(1)
+
+# if we have an output file, open it
+file_writer = None
+if out_file:
+    file_writer = open(out_file, 'w', encoding='utf8')
+
+# build the rule set
+for filename in rule_files:
+    rule = yara.compile(filename)
+    rules.append(rule)
+
+# execute the rules against the test file
+for line in input_stream:
+    line_counter += 1
+    for rule in rules:
+        # what isn't clear is that the results are written to the
+        # results list by the collect_results method
+        rule.match(data=line, callback=collect_results)
+    
+# cycle through the results, handling pass/fail accordingly
+for result in results:
+    if result['matches']:
+        pass_count += 1
+    else:
+        if not out_file:
+            if first_result:
+                first_result = False
+                print('Violations:')
+            print(format_result(result, verbose))
+        if file_writer:
+            file_writer.write(format_result(result, verbose) + '\n')
+        fail_count = fail_count + 1
+
+# assume a human is reading, provide a summary
+if not out_file:
+    if not first_result:
+        print()
+    print(f'Summary: {pass_count} passes, {fail_count} fails')
+
+# close the output file, if we have one
 if file_writer:
     file_writer.close()
 
+# if there have been errors, exit with am ERRORLEVEL of 1
 if fail_count > 0:
     sys.exit(1)
-sys.exit(0)
