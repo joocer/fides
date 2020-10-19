@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-import argparse, sys, os
+import sys, os
 import yara
-from pathlib import Path
 import os.path
-import warnings
 
 """
 Script to test a file, line by line, against a set of YARA rules.
@@ -26,7 +24,7 @@ def collect_results(data):
 def get_input_stream():
     """
     If input is piped into this method, use that otherwise expect a
-    filename as the first command line parameter.
+    filename as the first command-line parameter.
 
     Return a stream (or None) for processing.
     """
@@ -46,7 +44,7 @@ def get_parameter_value(label):
 
         -a value
 
-    Where '-a' is the label, and 'value' is the label.
+    Where '-a' is the label, and 'value' is the returned value.
     """
     if label in sys.argv:
         idx = sys.argv.index(label)
@@ -56,6 +54,10 @@ def get_parameter_value(label):
 
 
 def get_rule_files():
+    """
+    If there is a -r command-line parameter, try to use that for rules
+    otherwise look for .yar files in the current folder.
+    """
     rule_param = get_parameter_value('-r')
     if rule_param and os.path.isfile(rule_param):
         yield rule_param
@@ -70,13 +72,17 @@ def get_rule_files():
 
 
 def format_result(result, verbose):
+    """
+    Common code to format the results.
+    """
     if verbose:
         return f"line: {result['line_number']} - ({result['rule']}) {result['meta']['description']} - {result['line']}"
     return f"line: {result['line_number']} - ({result['rule']}) {result['meta']['description']}"
     
 
+# Initialize variables
 verbose      = '--verbose' in sys.argv or '-v' in sys.argv
-show_help    = '-?' in sys.argv or '-h' in sys.argv or '--help' in sys.argv
+show_help    = '-?' in sys.argv or '-h' in sys.argv or '--help' in sys.argv # be lenient on people asking for help
 rule_file    = get_parameter_value('-r')
 out_file     = get_parameter_value('-o')
 input_stream = get_input_stream()
@@ -87,6 +93,7 @@ fail_count   = 0
 pass_count   = 0
 line_counter = 0
 first_result = True
+
 
 # if help requested, display help and exit with no error
 if show_help:
@@ -103,28 +110,29 @@ if show_help:
     print("When FILE is omitted, standard input in read.")
     sys.exit(0)
 
-# if we have nothing to processes, error
+# if we have nothing to processes, display an error and how to get help
 if not input_stream:
     print("No input specified.")
     print(f"Try '{sys.argv[0]} --help' for usage information.")
     sys.exit(1)
 
-# if we have an output file, open it
-file_writer = None
-if out_file:
-    file_writer = open(out_file, 'w', encoding='utf8')
-
-# build the rule set
+# compile the rule set
 for filename in rule_files:
     rule = yara.compile(filename)
     rules.append(rule)
 
+# if we have an output file, open it now so we can save results
+file_writer = None
+if out_file:
+    file_writer = open(out_file, 'w', encoding='utf8')
+    
 # execute the rules against the test file
 for line in input_stream:
     line_counter += 1
     for rule in rules:
-        # what isn't clear is that the results are written to the
-        # results list by the collect_results method
+        # what isn't clear from this code is that the results 
+        # are saved to the results list by the collect_results 
+        # method
         rule.match(data=line, callback=collect_results)
     
 # cycle through the results, handling pass/fail accordingly
@@ -135,21 +143,22 @@ for result in results:
         if not out_file:
             if first_result:
                 first_result = False
-                print('Violations:')
+                print('Rule Violations:')
             print(format_result(result, verbose))
         if file_writer:
             file_writer.write(format_result(result, verbose) + '\n')
-        fail_count = fail_count + 1
-
-# assume a human is reading, provide a summary
-if not out_file:
-    if not first_result:
-        print()
-    print(f'Summary: {pass_count} passes, {fail_count} fails')
+        fail_count += 1
 
 # close the output file, if we have one
 if file_writer:
     file_writer.close()
+        
+# assume a human is reading screen output so, provide a summary 
+# so they don't need to count
+if not out_file:
+    if not first_result:
+        print()
+    print(f'Summary: {pass_count} passes, {fail_count} fails')
 
 # if there have been errors, exit with am ERRORLEVEL of 1
 if fail_count > 0:
