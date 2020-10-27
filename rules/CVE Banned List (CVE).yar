@@ -16,7 +16,7 @@ rule CVE001 : CVE_2017_0144
         $cve = "CVE-2017-0144"
         
     condition: 
-        not $cve
+        $cve
 }
 
 rule CVE002 : CVE_2017_5638
@@ -33,5 +33,5 @@ rule CVE002 : CVE_2017_5638
         $cve = "CVE-2017-5638"
         
     condition: 
-        not $cve
+        $cve
 }
