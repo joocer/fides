@@ -10,7 +10,7 @@ import "math"
 rule SECRETS01 : HIGH_ENTROPY_STRING 
 {
     meta:
-        author = "390516"
+        author = "Joocer"
         description = "Token with a high degree of randomness"
         timestamp = "2020-10-27"
         version = "0.01"
@@ -24,7 +24,7 @@ rule SECRETS01 : HIGH_ENTROPY_STRING
 rule SECRETS02 : SECRETS
 {
     meta:
-        author = "390516"
+        author = "Joocer"
         description = "Known Secret Formats" 
         timestamp = "2020-10-27"
         version = "0.01"
@@ -50,7 +50,7 @@ rule SECRETS02 : SECRETS
 rule SECRETS03 : KEY_FILES
 {
     meta:
-        author = "390516"
+        author = "Joocer"
         description = "Keyfile Markers Found" 
         timestamp = "2020-10-27"
         version = "0.01"
