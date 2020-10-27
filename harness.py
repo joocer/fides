@@ -23,18 +23,19 @@ def collect_results(data):
 
 def get_input_stream():
     """
-    If input is piped into this method, use that otherwise expect a
-    filename as the first command-line parameter.
+    If first paramter is - use standard in, if it's a existing
+    file, open an use that
 
     Return a stream (or None) for processing.
     """
-    if not sys.stdin.isatty():
-        return sys.stdin                                          
-    else:
-        if len(sys.argv) > 1:
-            input_filename = sys.argv[1]
-            if os.path.isfile(input_filename):
-                return open(input_filename, 'r')
+                                      
+    if len(sys.argv) > 1:
+        input_filename = sys.argv[1]
+        if input_filename == '-':
+            if not sys.stdin.isatty():
+                return sys.stdin    
+        if os.path.isfile(input_filename):
+            return open(input_filename, 'r')
     return None
 
 
@@ -107,7 +108,7 @@ if show_help:
     print("  -v, --verbose\tflag to increase the amount of result information")
     print("  -h, --help\tdisplay this help text and exit")
     print()
-    print("When FILE is omitted, standard input in read.")
+    print("When FILE is -, standard input in read.")
     sys.exit(0)
 
 # if we have nothing to processes, display an error and how to get help
@@ -129,15 +130,17 @@ if out_file:
 # execute the rules against the test file
 for line in input_stream:
     line_counter += 1
-    for rule in rules:
-        # what isn't clear from this code is that the results 
-        # are saved to the results list by the collect_results 
-        # method
-        rule.match(data=line, callback=collect_results)
+    line = line.rstrip('\n|\r\n')
+    if len(line) > 1:
+        for rule in rules:
+            # what isn't clear from this code is that the results 
+            # are saved to the results list by the collect_results 
+            # method
+            rule.match(data=line, callback=collect_results)
     
 # cycle through the results, handling pass/fail accordingly
 for result in results:
-    if result['matches']:
+    if not result['matches']:
         pass_count += 1
     else:
         if not out_file:
