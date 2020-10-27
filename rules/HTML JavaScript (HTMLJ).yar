@@ -21,7 +21,7 @@ rule HTMLJ001 : ASVSx_x CWEx
         $has_sri = /<script[\s\S]*?integrity="[\s\S]*?"[\s\S]*?>[\s\S]*?<\/script>/ nocase 
 
     condition: 
-        #has_script == #has_sri
+        #has_script != #has_sri
 }
 
 rule HTMLJ002 : ASVSx_x CWEx
@@ -39,6 +39,5 @@ rule HTMLJ002 : ASVSx_x CWEx
         $has_js = /<a[\s\S]*?href="javascript/ nocase
 
     condition: 
-        not $has_on and
-        not $has_js
+        $has_on or $has_js
 }
