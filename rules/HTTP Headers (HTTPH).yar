@@ -16,7 +16,7 @@ rule HTTPH001 : ASVSx_x CWEx
         $a = "Access-Control-Allow-Origin:" nocase
         
     condition: 
-        $a
+        not $a
 }
 
 
@@ -34,5 +34,5 @@ rule HTTPH002 : ASVSx_x CWEx
         $a = /strict-transport-security:[\s]max-age=[0-9]*?/ nocase
         
     condition: 
-        $a
+        not $a
 }
