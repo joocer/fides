@@ -3,14 +3,19 @@ import yara
 import glob
 import os.path
 
+RULE_URL = "https://raw.githubusercontent.com/joocer/fides/master/rules/Leaked%20Secrets%20(SECRETS).yar"
+
+def download_file(url):
+    import requests
+    r = requests.get(url, allow_redirects=True)
+    if r.status_code == 200:
+        return r.text
+    return None
 
 found_secrets = False
 line_counter = 0
-for rule_file in glob.iglob("../../**/Leaked Secrets (SECRETS).yar", recursive=True):
-    print(f"Working Directory {os.getcwd()}")
-    print(f"Reading rules from {rule_file}")
-    rules = yara.compile(rule_file)
-    break
+rule_file = download_file(RULE_URL)
+rules = yara.compile(source=rule_file)
 
 for file_name in glob.iglob("**", recursive=True):
     if not os.path.isfile(file_name):
@@ -31,7 +36,6 @@ for file_name in glob.iglob("**", recursive=True):
                         print(
                             f"\033[0;35m{match.meta['description']:40}\033[0m \033[0;34mWARN\033[0m {file_name}:{line_counter}"
                         )
-                        found_secrets = True
 
 # if there have been errors, exit with am ERRORLEVEL of 1
 if found_secrets > 0:
