@@ -7,7 +7,7 @@ import os.path
 found_secrets = False
 line_counter = 0
 for rule_file in glob.iglob("../../**/Leaked Secrets (SECRETS).yar", recursive=True):
-    print(f"Working Directory {os.getcwd}")
+    print(f"Working Directory {os.getcwd()}")
     print(f"Reading rules from {rule_file}")
     rules = yara.compile(rule_file)
     break
@@ -15,11 +15,11 @@ for rule_file in glob.iglob("../../**/Leaked Secrets (SECRETS).yar", recursive=T
 for file_name in glob.iglob("**", recursive=True):
     if not os.path.isfile(file_name):
         continue
-    with open(file_name, "r") as contents:
+    with open(file_name, "rb") as contents:
         line_counter = 0
         for line in contents.readlines():
             line_counter += 1
-            line = line.rstrip("\n|\r\n").strip()
+            #line = line.rstrip("\n|\r\n").strip()
             if len(line) > 1:
                 matches = rules.match(data=line)
                 for match in matches:
