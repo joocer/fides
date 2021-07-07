@@ -11,22 +11,22 @@ rule SECRETS01 : HIGH_ENTROPY_STRING
 {
     meta:
         author = "Joocer"
-        description = "Token with a high degree of randomness"
+        description = "Token Appears to be a Random String"
         timestamp = "2020-10-27"
         version = "0.01"
         importance = "medium"
     strings:
         $token = /[A-Z0-9\=\_\-]{8,64}/ nocase
     condition:
-        math.entropy(@token, !token) > 3.2
+        math.entropy(@token, !token) > 3.9
 }
 
 rule SECRETS02 : SECRETS
 {
     meta:
         author = "Joocer"
-        description = "Known Secret Formats" 
-        timestamp = "2020-10-27"
+        description = "Token Matches Known Secret Format" 
+        timestamp = "2021-07-06"
         version = "0.01"
         importance = "high"
                 
@@ -35,6 +35,7 @@ rule SECRETS02 : SECRETS
         $facebook_oauth = /facebook.{0,30}['\\"\\\\s][0-9a-f]{32}['\\"\\\\s]/ nocase
         $twitter_oauth = /twitter.{0,30}['\\"\\\\s][0-9A-Z]{35,44}['\\"\\\\s]/ nocase
         $github = /github.{0,30}['\\"\\\\s][0-9A-Z]{35,40}['\\"\\\\s]/ nocase
+        $github_pat = /ghp_[0-9A-Z]{36}/ nocase
         $google_oauth = /(\\"client_secret\\":\\"[a-zA-Z0-9-_]{24}\\")/
         $AWS_API_key = /AKIA[0-9A-Z]{16}/
         $heroku_API_key = /heroku.{0,30}[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}/ nocase
@@ -51,7 +52,7 @@ rule SECRETS03 : KEY_FILES
 {
     meta:
         author = "Joocer"
-        description = "Keyfile Markers Found" 
+        description = "Token Matches Known Secret File Marker" 
         timestamp = "2020-10-27"
         version = "0.01"
         importance = "high"

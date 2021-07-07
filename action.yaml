@@ -1,0 +1,6 @@
+name: 'fides'
+description: 'secret scanner'
+author: 'Justin Joyce'
+runs:
+  using: "docker"
+  image: "dockerfile"
