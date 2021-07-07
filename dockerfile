@@ -8,4 +8,4 @@ RUN pip install -r ./app/requirements.txt
 
 WORKDIR /app
 ENV PYTHONPATH /app
-CMD ["/app/run.py"]
+CMD ["python", "/app/run.py"]
