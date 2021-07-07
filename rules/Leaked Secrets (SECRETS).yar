@@ -18,7 +18,7 @@ rule SECRETS01 : HIGH_ENTROPY_STRING
     strings:
         $token = /[A-Z0-9\=\_\-]{8,64}/ nocase
     condition:
-        math.entropy(@token, !token) > 4
+        math.entropy(@token, !token) > 4.1
 }
 
 rule SECRETS02 : SECRETS
