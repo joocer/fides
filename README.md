@@ -24,3 +24,6 @@ jobs:
       - name: execute_action
         uses: joocer/fides@main
 ~~~
+
+## Example Output
+<img src="result-screen.png" width="1206px"/>
