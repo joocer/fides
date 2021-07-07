@@ -6,7 +6,9 @@ import os.path
 
 found_secrets = False
 line_counter = 0
-rules = yara.compile("rules/Leaked Secrets (SECRETS).yar")
+for rule_file in glob.iglob("../**/Leaked Secrets (SECRETS).yar", recursive=True):
+    rules = yara.compile(rule_file)
+    break
 
 for file_name in glob.iglob("**", recursive=True):
     if not os.path.isfile(file_name):
