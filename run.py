@@ -7,8 +7,8 @@ RULE_URL = "https://raw.githubusercontent.com/joocer/fides/master/rules/Leaked%2
 
 def download_file(url):
 
-    with open("rules/Leaked Secrets (SECRETS).yar", "r") as f:
-        return f.read()
+#    with open("rules/Leaked Secrets (SECRETS).yar", "r") as f:
+#        return f.read()
 
     import requests
     r = requests.get(url, allow_redirects=True)
