@@ -6,6 +6,10 @@ import os.path
 RULE_URL = "https://raw.githubusercontent.com/joocer/fides/master/rules/Leaked%20Secrets%20(SECRETS).yar"
 
 def download_file(url):
+
+    with open("rules/Leaked Secrets (SECRETS).yar", "r") as f:
+        return f.read()
+
     import requests
     r = requests.get(url, allow_redirects=True)
     if r.status_code == 200:
@@ -13,7 +17,6 @@ def download_file(url):
     return None
 
 found_secrets = False
-line_counter = 0
 rule_file = download_file(RULE_URL)
 rules = yara.compile(source=rule_file)
 
@@ -21,20 +24,18 @@ for file_name in glob.iglob("**", recursive=True):
     if not os.path.isfile(file_name):
         continue
     with open(file_name, "rb") as contents:
-        line_counter = 0
-        for line in contents.readlines():
-            line_counter += 1
+        for line_counter, line in enumerate(contents.readlines()):
             if len(line) > 1:
                 matches = rules.match(data=line)
                 for match in matches:
                     if match.meta['description'] != "Token Appears to be a Random String":
                         print(
-                            f"\033[0;33m{match.meta['description']:40}\033[0m \033[0;31mFAIL\033[0m {file_name}:{line_counter}"
+                            f"\033[0;33m{match.meta['description']:40}\033[0m \033[0;31mFAIL\033[0m {file_name}:{line_counter + 1}"
                         )
                         found_secrets = True
                     else:
                         print(
-                            f"\033[0;35m{match.meta['description']:40}\033[0m \033[0;34mWARN\033[0m {file_name}:{line_counter}"
+                            f"\033[0;35m{match.meta['description']:40}\033[0m \033[0;34mWARN\033[0m {file_name}:{line_counter + 1}"
                         )
 
 # if there have been errors, exit with am ERRORLEVEL of 1

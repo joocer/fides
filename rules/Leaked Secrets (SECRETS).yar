@@ -26,8 +26,8 @@ rule SECRETS02 : SECRETS
     meta:
         author = "Joocer"
         description = "Token Matches Known Secret Format" 
-        timestamp = "2021-07-06"
-        version = "0.01"
+        timestamp = "2022-01-12"
+        version = "0.02"
         importance = "high"
                 
     strings: 
@@ -43,6 +43,8 @@ rule SECRETS02 : SECRETS
         $google_service_account = /\\"type\\": \\"service_account\\"/
         $twilio_API_key = /SK[a-z0-9]{32}/
         $password_in_URL = /[a-zA-Z]{3,10}:\/\/[^\/\\\\s:@]{3,20}:[^\/\\\\s:@]{3,20}@.{1,100}[\\"'\\\\s]/
+        $oath_token = /ya29\.[\w-]+/ nocase
+        $jwt_token = /eyJ[0-9A-Z_-]{8,}\.eyJ[0-9A-Z_-]{8,}\.[0-9A-Z_-]{16,}/ nocase
         
     condition: 
         any of them
