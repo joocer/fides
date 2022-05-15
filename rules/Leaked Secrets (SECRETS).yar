@@ -41,7 +41,6 @@ rule SECRETS02 : SECRETS
         $heroku_API_key = /heroku.{0,30}[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}/ nocase
         $slack_webhook = /https:\/\/hooks.slack.com\/services\/T[a-zA-Z0-9_]{8}\/B[a-zA-Z0-9_]{8}\/[a-zA-Z0-9_]{24}/
         $google_service_account = /\\"type\\": \\"service_account\\"/
-        $twilio_API_key = /SK[a-z0-9]{32}/
         $password_in_URL = /[a-zA-Z]{3,10}:\/\/[^\/\\\\s:@]{3,20}:[^\/\\\\s:@]{3,20}@.{1,100}[\\"'\\\\s]/
         $oath_token = /ya29\.[\w-]+/ nocase
         $jwt_token = /eyJ[0-9A-Z_-]{8,}\.eyJ[0-9A-Z_-]{8,}\.[0-9A-Z_-]{16,}/ nocase
