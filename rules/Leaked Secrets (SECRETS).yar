@@ -31,19 +31,19 @@ rule SECRETS02 : SECRETS
         importance = "high"
                 
     strings: 
-        $slack_token = /(xox[p|b|o|a]\-[0-9]{12}\-[0-9]{12}\-[0-9]{12}\-[a-z0-9]{32})/
-        $facebook_oauth = /facebook.{0,30}['\\"\\\\s][0-9a-f]{32}['\\"\\\\s]/ nocase
-        $twitter_oauth = /twitter.{0,30}['\\"\\\\s][0-9A-Z]{35,44}['\\"\\\\s]/ nocase
-        $github = /github.{0,30}['\\"\\\\s][0-9A-Z]{35,40}['\\"\\\\s]/ nocase
-        $github_pat = /ghp_[0-9A-Z]{36}/ nocase
-        $google_oauth = /(\\"client_secret\\":\\"[a-zA-Z0-9-_]{24}\\")/
-        $AWS_API_key = /AKIA[0-9A-Z]{16}/
-        $heroku_API_key = /heroku.{0,30}[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}/ nocase
-        $slack_webhook = /https:\/\/hooks.slack.com\/services\/T[a-zA-Z0-9_]{8}\/B[a-zA-Z0-9_]{8}\/[a-zA-Z0-9_]{24}/
-        $google_service_account = /\\"type\\": \\"service_account\\"/
-        $password_in_URL = /[a-zA-Z]{3,10}:\/\/[^\/\\\\s:@]{3,20}:[^\/\\\\s:@]{3,20}@.{1,100}[\\"'\\\\s]/
-        $oath_token = /ya29\.[\w-]+/ nocase
-        $jwt_token = /eyJ[0-9A-Z_-]{8,}\.eyJ[0-9A-Z_-]{8,}\.[0-9A-Z_-]{16,}/ nocase
+        $slack_token = /\b(xox[p|b|o|a]\-[0-9]{12}\-[0-9]{12}\-[0-9]{12}\-[a-z0-9]{32})\b/
+        $facebook_oauth = /\bfacebook.{0,30}['\\"\\\\s][0-9a-f]{32}['\\"\\\\s]\b/ nocase
+        $twitter_oauth = /\btwitter.{0,30}['\\"\\\\s][0-9A-Z]{35,44}['\\"\\\\s]\b/ nocase
+        $github = /\bgithub.{0,30}['\\"\\\\s][0-9A-Z]{35,40}['\\"\\\\s]\b/ nocase
+        $github_pat = /\bghp_[0-9A-Z]{36}\b/ nocase
+        $google_oauth = /\b(\\"client_secret\\":\\"[a-zA-Z0-9-_]{24}\\")\b/
+        $AWS_API_key = /\bAKIA[0-9A-Z]{16}\b/
+        $heroku_API_key = /\bheroku.{0,30}[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\b/ nocase
+        $slack_webhook = /\bhttps:\/\/hooks.slack.com\/services\/T[a-zA-Z0-9_]{8}\/B[a-zA-Z0-9_]{8}\/[a-zA-Z0-9_]{24}\b/
+        $google_service_account = /\b\\"type\\": \\"service_account\\"\b/
+        $password_in_URL = /\b[a-zA-Z]{3,10}:\/\/[^\/\\\\s:@]{3,20}:[^\/\\\\s:@]{3,20}@.{1,100}[\\"'\\\\s]\b/
+        $oath_token = /\bya29\.[\w-]+\b/ nocase
+        $jwt_token = /\beyJ[0-9A-Z_-]{8,}\.eyJ[0-9A-Z_-]{8,}\.[0-9A-Z_-]{16,}\b/ nocase
         
     condition: 
         any of them
