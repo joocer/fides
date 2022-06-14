@@ -1,7 +1,4 @@
-FROM python:3-slim
-
-RUN apt-get update
-RUN apt-get -y install gcc
+FROM python:3
 
 ADD . /app
 RUN pip install -r ./app/requirements.txt

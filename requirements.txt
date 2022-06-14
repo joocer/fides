@@ -1,3 +1,2 @@
 yara-python
 requests
-types-requests
