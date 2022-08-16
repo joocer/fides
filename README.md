@@ -11,6 +11,8 @@ language, used by security professionals and malware analysts around the world t
 build malware detection and classification tools.
 
 ## Example Usage
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjoocer%2Ffides.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjoocer%2Ffides?ref=badge_shield)
+
 ~~~
 name:secret_scanner
 on: [push, pull_request]
@@ -27,3 +29,6 @@ jobs:
 
 ## Example Output
 <img src="result-screen.png" width="1206px"/>
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjoocer%2Ffides.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjoocer%2Ffides?ref=badge_large)
