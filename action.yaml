@@ -29,5 +29,5 @@ runs:
       shell: bash
 
     - name: Run Fides
-      run: python ../../fides/run.py
+      run: python ../fides/run.py
       shell: bash
