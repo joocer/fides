@@ -2,8 +2,6 @@
 
 _Fides - helping you keep secrets secret_
 
-----
-
 Fides is a secret-scanning tool designed to sift through code repositories to identify secrets that have been accidentally committed.
 
 Leveraging the powerful [YARA](https://yara.readthedocs.io/en/v4.1.1/index.html) language, a tool of choice among security professionals and malware analysts for building detection and classification tools.
