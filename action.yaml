@@ -11,6 +11,23 @@ runs:
       run: pip install -r requirements.txt
       shell: bash
 
+    - name: paths
+      run: ls
+      shell: bash
+
+    - name: paths
+      run: |
+        cd ..
+        ls
+      shell: bash
+
+    - name: paths
+      run: |
+        cd ..
+        cd ..
+        ls
+      shell: bash
+
     - name: Run Fides
-      run: python run.py
+      run: python ../../fides/run.py
       shell: bash
