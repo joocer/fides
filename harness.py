@@ -1,7 +1,10 @@
-#!/usr/bin/env python
-import sys, os
-import yara
+import os
 import os.path
+
+#!/usr/bin/env python
+import sys
+
+import yara
 
 """
 Script to test a file, line by line, against a set of YARA rules.
@@ -105,12 +108,8 @@ if show_help:
     print("Example: test zap_results.csv -o zap_critical_results.csv")
     print()
     print("  FILE\t\tfile to test")
-    print(
-        "  -o\t\tfile to save results to, if omitted results printed to standard output"
-    )
-    print(
-        "  -r\t\tfile containing rules, if omitted all .yar files in current directort used"
-    )
+    print("  -o\t\tfile to save results to, if omitted results printed to standard output")
+    print("  -r\t\tfile containing rules, if omitted all .yar files in current directort used")
     print("  -v, --verbose\tflag to increase the amount of result information")
     print("  -h, --help\tdisplay this help text and exit")
     print()

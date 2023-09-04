@@ -1,6 +1,16 @@
-name: 'fides'
-description: 'secret scanner'
-author: 'Justin Joyce'
+name: 'Fides Secret Scanner'
+description: 'Fides - helping you keep secrets secret'
 runs:
-  using: "docker"
-  image: "dockerfile"
+  using: "composite"
+  steps:
+    - name: Set up Python
+      run: sudo apt-get update && sudo apt-get install -y python3.9
+      shell: bash
+
+    - name: Install Fides Requirements
+      run: pip install -r requirements.txt
+      shell: bash
+
+    - name: Run Fides
+      run: python run.py
+      shell: bash

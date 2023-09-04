@@ -1,29 +1,42 @@
 **fides**  
-secret scanning github action
+_Fides - helping you keep secrets secret_
 
 ----
 
-Searches through code for looking for secrets, this is used to finding secrets 
-which have been committed accidently.
+Fides is a secret-scanning tool designed to sift through code repositories to identify secrets that have been accidentally committed.
 
-Leveraging the powerful [YARA](https://yara.readthedocs.io/en/v4.1.1/index.html)
-language, used by security professionals and malware analysts around the world to
-build malware detection and classification tools.
+Leveraging the powerful [YARA](https://yara.readthedocs.io/en/v4.1.1/index.html) language, a tool of choice among security professionals and malware analysts for building detection and classification tools.
 
-## Example Usage
+## Features
+
+- Scans recursively through all files in a repository
+- Utilizes YARA rules for high accuracy and customization
+- Can be easily integrated into CI/CD pipelines
+
+## Installation
+
+Please refer to the GitHub Action configuration examples below to integrate Fides into your workflow.
+
+## Example GitHub Action Configuration
+
 ~~~
-name:secret_scanner
+name: Fides - helping you keep secrets secret
 on: [push, pull_request]
 jobs:
   fides:
     runs-on: ubuntu-latest
     steps:
-      - name: check out
+      - name: Check out code
         uses: actions/checkout@v2
 
-      - name: execute_action
+      - name: Execute Fides Action
         uses: joocer/fides@main
 ~~~
 
 ## Example Output
+
 <img src="result-screen.png" width="1206px"/>
+
+## License 
+
+[Apache 2.0](https://github.com/joocer/fides/blob/main/LICENSE)
