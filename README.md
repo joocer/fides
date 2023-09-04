@@ -20,14 +20,13 @@ Please refer to the GitHub Action configuration examples below to integrate Fide
 
 ~~~yaml
 name: Fides - helping you keep secrets secret
+
 on: [push, pull_request]
+
 jobs:
   fides:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-
       - name: Execute Fides Action
         uses: joocer/fides@main
 ~~~
