@@ -14,18 +14,12 @@ runs:
         repository: joocer/fides
         path: fides
 
-    - name: paths
-      run: |
-        ls
-        cd ..
-        ls
-        cd ..
-        ls
+    - name: Install Fides Requirements
+      run: pip install -r fides/requirements.txt
       shell: bash
 
-    - name: Install Fides Requirements
-      run: pip install -r requirements.txt
-      shell: bash
+    - name: Navigate to the project directory
+      run: cd $REPO_NAME
 
     - name: Run Fides
       run: python ../fides/run.py
