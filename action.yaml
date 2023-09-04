@@ -18,10 +18,9 @@ runs:
       run: pip install -r fides/requirements.txt
       shell: bash
 
-    - name: Navigate to the project directory
-      run: cd $REPO_NAME
-      shell: bash
-
     - name: Run Fides
-      run: python ../fides/run.py
+      run: |
+        cd ${{ github.event.repository.name }}
+        ls
+        python ../fides/run.py
       shell: bash
