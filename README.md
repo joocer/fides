@@ -1,4 +1,5 @@
-**fides**  
+# Fides
+
 _Fides - helping you keep secrets secret_
 
 ----
@@ -19,7 +20,7 @@ Please refer to the GitHub Action configuration examples below to integrate Fide
 
 ## Example GitHub Action Configuration
 
-~~~
+~~~yaml
 name: Fides - helping you keep secrets secret
 on: [push, pull_request]
 jobs:
