@@ -44,6 +44,7 @@ def main():
     for file_name in glob.iglob("**", recursive=True):
         if not os.path.isfile(file_name):
             continue
+        print(file_name)
         with open(file_name, "rb") as contents:
             for line_counter, line in enumerate(contents.readlines()):
                 if len(line) > 1:
