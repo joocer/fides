@@ -10,6 +10,8 @@ runs:
       
     - name: Checkout Code
       uses: actions/checkout@v3
+      with:
+        path: subject
 
     - name: Check out Fides code
       uses: actions/checkout@v3
@@ -24,7 +26,7 @@ runs:
     - name: Run Fides
       run: |
         ls
-        cd ${{ github.event.repository.name }}
+        cd subject
         ls
         python ../fides/run.py
       shell: bash
