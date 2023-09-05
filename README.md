@@ -14,11 +14,13 @@ Leveraging the powerful [YARA](https://yara.readthedocs.io/en/v4.1.1/index.html)
 
 ## Installation
 
-Please refer to the GitHub Action configuration examples below to integrate Fides into your workflow.
+Fides is intended to be run as a [GitHub Action](https://github.com/marketplace/actions/fides-secret-scanner). Please refer to the GitHub Action configuration examples below to integrate Fides into your workflow.
 
 ## Example GitHub Action Configuration
 
 ~~~yaml
+# fides.yaml
+
 name: Fides - helping you keep secrets secret
 
 on: [push, pull_request]
