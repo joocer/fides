@@ -1,7 +1,6 @@
+#!/usr/bin/env python
 import os
 import os.path
-
-#!/usr/bin/env python
 import sys
 
 import yara
@@ -26,8 +25,8 @@ def collect_results(data):
 
 def get_input_stream():
     """
-    If first paramter is - use standard in, if it's a existing
-    file, open an use that
+    If first parameter is - use standard in, if it's an existing
+    file, open and use that
 
     Return a stream (or None) for processing.
     """
@@ -38,7 +37,7 @@ def get_input_stream():
             if not sys.stdin.isatty():
                 return sys.stdin
         if os.path.isfile(input_filename):
-            return open(input_filename, "r")
+            return open(input_filename, "r", encoding="utf-8")
     return None
 
 
@@ -80,8 +79,11 @@ def format_result(result, verbose):
     Common code to format the results.
     """
     if verbose:
-        return f"line: {result['line_number']} - ({result['rule']}) {result['meta']['description']} - {result['line']}"
-    return f"line: {result['line_number']} - ({result['rule']}) {result['meta']['description']}"
+        return (
+            f"line: {result['line_number']} - ({result['rule']}) "
+            f"{result['meta']['description']} - {result['line']}"
+        )
+    return f"line: {result['line_number']} - ({result['rule']}) " f"{result['meta']['description']}"
 
 
 # Initialize variables
@@ -89,7 +91,6 @@ verbose = "--verbose" in sys.argv or "-v" in sys.argv
 show_help = (
     "-?" in sys.argv or "-h" in sys.argv or "--help" in sys.argv
 )  # be lenient on people asking for help
-rule_file = get_parameter_value("-r")
 out_file = get_parameter_value("-o")
 input_stream = get_input_stream()
 rule_files = get_rule_files()
@@ -109,11 +110,11 @@ if show_help:
     print()
     print("  FILE\t\tfile to test")
     print("  -o\t\tfile to save results to, if omitted results printed to standard output")
-    print("  -r\t\tfile containing rules, if omitted all .yar files in current directort used")
+    print("  -r\t\tfile containing rules, if omitted all .yar files in current directory used")
     print("  -v, --verbose\tflag to increase the amount of result information")
     print("  -h, --help\tdisplay this help text and exit")
     print()
-    print("When FILE is -, standard input in read.")
+    print("When FILE is -, standard input is read.")
     sys.exit(0)
 
 # if we have nothing to processes, display an error and how to get help
@@ -133,15 +134,20 @@ if out_file:
     file_writer = open(out_file, "w", encoding="utf8")
 
 # execute the rules against the test file
-for line in input_stream:
-    line_counter += 1
-    line = line.rstrip("\n|\r\n")
-    if len(line) > 1:
-        for rule in rules:
-            # what isn't clear from this code is that the results
-            # are saved to the results list by the collect_results
-            # method
-            rule.match(data=line, callback=collect_results)
+try:
+    for line in input_stream:
+        line_counter += 1
+        line = line.rstrip("\n\r")
+        if len(line) > 1:
+            for rule in rules:
+                # what isn't clear from this code is that the results
+                # are saved to the results list by the collect_results
+                # method
+                rule.match(data=line, callback=collect_results)
+finally:
+    # Close input stream if it's a file
+    if input_stream and hasattr(input_stream, "close") and input_stream != sys.stdin:
+        input_stream.close()
 
 # cycle through the results, handling pass/fail accordingly
 for result in results:
@@ -168,6 +174,6 @@ if not out_file:
         print()
     print(f"Summary: {pass_count} passes, {fail_count} fails")
 
-# if there have been errors, exit with am ERRORLEVEL of 1
+# if there have been errors, exit with an ERRORLEVEL of 1
 if fail_count > 0:
     sys.exit(1)

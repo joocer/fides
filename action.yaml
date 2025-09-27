@@ -1,20 +1,36 @@
 name: 'Fides Secret Scanner'
 description: 'Fides - helping you keep secrets secret'
+branding:
+  icon: 'shield'
+  color: 'red'
+inputs:
+  fail-on-secrets:
+    description: 'Fail the action if secrets are found'
+    required: false
+    default: 'true'
+  config-file:
+    description: 'Path to configuration file'
+    required: false
+  verbose:
+    description: 'Enable verbose output'
+    required: false
+    default: 'false'
+  
 runs:
   using: "composite"
   steps:
     - name: Set up Python 3.10
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
       
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: subject
 
     - name: Check out Fides code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: joocer/fides
         path: fides
@@ -26,5 +42,12 @@ runs:
     - name: Run Fides
       run: |
         cd subject
-        python ../fides/run.py
+        if [ "${{ inputs.verbose }}" = "true" ]; then
+          python ../fides/run.py --verbose
+        else
+          python ../fides/run.py
+        fi
       shell: bash
+      env:
+        FIDES_FAIL_ON_SECRETS: ${{ inputs.fail-on-secrets }}
+        FIDES_CONFIG_FILE: ${{ inputs.config-file }}
