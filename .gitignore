@@ -1,3 +1,15 @@
 **.pyc
 .vscode/**
 .dccache
+__pycache__/
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+.tox/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.DS_Store
