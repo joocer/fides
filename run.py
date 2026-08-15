@@ -71,6 +71,15 @@ def _should_skip_file(file_path: str) -> bool:
         ".tox",
         ".venv",
         "venv",
+        "site-packages",
+        # Vendored third-party source. Upstream projects ship test
+        # certificates and credential-shaped fixtures that are not the
+        # scanned repository's secrets to rotate.
+        "third_party",
+        "third-party",
+        "vendor",
+        "vendored",
+        "external",
     }
 
     # Check extension

@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  - workflow_call
+  - push
+  - pull_request
+
+jobs:
+  tests:
+    name: Unit and Rule Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set Up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Requirements
+        run: python -m pip install --no-cache-dir -r requirements.txt
+
+      - name: Run Scanner Tests
+        run: python -m unittest test_fides -v
+
+      - name: Run Rule Tests
+        # tests/test_rules.py asserts every pattern in the ruleset matches a
+        # sample. A malformed YARA pattern compiles cleanly and then silently
+        # never fires, so this is the only thing standing between a typo and
+        # a rule that looks active but detects nothing.
+        run: python -m unittest discover -s tests -v
