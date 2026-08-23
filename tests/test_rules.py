@@ -46,6 +46,14 @@ B64 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/"
 
 # pattern identifier -> a line that must trigger it
 POSITIVE_SAMPLES = {
+    # --- SECRETS00 : allowlist ------------------------------------------
+    # These are real, published, and owned by nobody. They are here so a
+    # typo in an allowlist entry fails the build instead of quietly
+    # un-excusing a credential every downstream repo expects to be excused.
+    "known_public_azurite": "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1"
+    "OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==",
+    "known_public_aws_example_id": 'ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE"',
+    "known_public_aws_example_secret": 'SECRET_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"',
     # --- SECRETS02 : legacy formats -------------------------------------
     "slack_token": "SLACK = 'xoxb-123456789012-123456789012-123456789012-" + _fill("abcdefghijklmnopqrstuvwxyz0123456789", 32) + "'",
     "slack_webhook": "https://hooks.slack.com/services/T00000000/B00000000/" + _fill(ALNUM, 24),
@@ -71,8 +79,12 @@ POSITIVE_SAMPLES = {
     "PuTTY_private_key": "PuTTY-User-Key-File-2: ssh-rsa",
     "age_secret_key": "AGE-SECRET-KEY-1" + _fill(UPPER, 58),
     # --- SECRETS04 : cloud providers ------------------------------------
-    "aws_access_key": "AKIAIOSFODNN7EXAMPLE",
-    "aws_secret_key": 'aws_secret_access_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"',
+    # Deliberately not AWS's documented example pair - SECRETS00 allowlists
+    # that pair by name, so using it here would test the allowlist, not the
+    # pattern. Built from _fill rather than written out: a literal that looks
+    # like a live AWS key trips GitHub's push protection on the way in.
+    "aws_access_key": "AKIA" + _fill(UPPER, 16),
+    "aws_secret_key": 'aws_secret_access_key = "' + _fill(ALNUM, 40) + '"',
     "aws_mws_token": "amzn.mws.01234567-89ab-cdef-0123-456789abcdef",
     "gcp_api_key": "GOOGLE_API_KEY=AIza" + _fill(ALNUM, 35),
     "gcp_oauth_client_secret": "GOCSPX-" + _fill(ALNUM, 28),
@@ -187,12 +199,10 @@ NEGATIVE_SAMPLES = [
     "  *password = passphrase;",
     "  identity->Password = dup_passwd.tbyte_ptr;",
     "self.password = password",
-    # --- published constants that look like credentials -----------------
-    # Azurite's emulator key is identical in every install and documented
-    # publicly by Microsoft; flagging it trains people to ignore the tool.
-    'AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;'
-    "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/"
-    'KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"',
+    # NOTE: published-but-credential-shaped constants (Azurite's emulator
+    # key, AWS's documented example pair) are deliberately NOT here. They
+    # *do* match at the rule level, by design - SECRETS00 marks them and the
+    # scanner reports the suppression. See test_fides.py for those cases.
 ]
 
 
@@ -215,11 +225,7 @@ class TestRuleCoverage(unittest.TestCase):
 
     def test_every_pattern_is_covered(self):
         declared = declared_pattern_names() - NON_DETECTION_PATTERNS
-        declared = {
-            n
-            for n in declared
-            if not n.startswith("placeholder") and not n.startswith("known_public")
-        }
+        declared = {n for n in declared if not n.startswith("placeholder")}
         tested = set(POSITIVE_SAMPLES)
         missing = declared - tested
         self.assertEqual(

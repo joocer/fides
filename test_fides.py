@@ -2,6 +2,7 @@
 """
 Basic tests for Fides functionality
 """
+
 import os
 import sys
 import tempfile
@@ -11,7 +12,21 @@ from unittest.mock import patch, mock_open
 # Add the parent directory to sys.path to import fides modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from run import _is_binary_file, _should_skip_file, download_file
+import yara
+
+from run import _is_binary_file, _should_skip_file, download_file, redact, scan_line
+
+RULES_FILE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "rules", "Leaked Secrets (SECRETS).yar"
+)
+
+# Assembled rather than written out. These are fabricated, but a literal that
+# looks like a live credential trips GitHub's push protection on the way in -
+# which is the same instinct this tool exists to serve.
+UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+ALNUM = "abcdefghijklmnopqrstuvwxyz0123456789"
+FAKE_AWS_KEY = "AKIA" + UPPER[:16]
+FAKE_GITHUB_PAT = "ghp_" + (ALNUM * 2)[:36]
 
 
 class TestFidesFunctionality(unittest.TestCase):
@@ -68,6 +83,70 @@ class TestFidesFunctionality(unittest.TestCase):
         mock_response.return_value.status = 404
         result = download_file("http://example.com/missing.txt")
         self.assertIsNone(result)
+
+
+class TestAllowlistReporting(unittest.TestCase):
+    """
+    A credential that is public by design must be *reported as ignored*, not
+    silently absent. A scan that finds nothing and a scan that found something
+    and excused it are different outcomes, and only one of them tells you the
+    rule is still alive.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.rules = yara.compile(RULES_FILE)
+
+    def scan(self, line):
+        return scan_line(self.rules, "sample.py", 1, line)
+
+    def test_real_credential_fails(self):
+        findings = self.scan(f'KEY = "{FAKE_AWS_KEY}"')
+        self.assertEqual(["error"], [f["severity"] for f in findings])
+        self.assertEqual("SECRETS04", findings[0]["rule"])
+
+    def test_known_public_credential_is_ignored_not_dropped(self):
+        findings = self.scan('ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE"')
+        self.assertEqual(1, len(findings), "the suppressed detection must still be reported")
+        finding = findings[0]
+        self.assertEqual("ignored", finding["severity"])
+        # the detection that was excused, not the allowlist entry itself
+        self.assertEqual("SECRETS04", finding["rule"])
+        self.assertEqual("$aws_access_key", finding["pattern"])
+        # and it names what excused it
+        self.assertIn("SECRETS00", finding["ignored_by"])
+        self.assertIn("$known_public_aws_example_id", finding["ignored_by"])
+
+    def test_azurite_key_is_ignored(self):
+        findings = self.scan(
+            'CONN = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;'
+            "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/"
+            'K1SZFPTOtr/KBHBeksoGMGw==;"'
+        )
+        self.assertTrue(findings, "azurite key must be reported as ignored, not dropped")
+        self.assertTrue(all(f["severity"] == "ignored" for f in findings))
+        self.assertTrue(all("$known_public_azurite" in f["ignored_by"] for f in findings))
+
+    def test_allowlist_hit_alone_reports_nothing(self):
+        # SECRETS00 claims this line, but no detection rule fired on it - there
+        # is nothing to excuse, so there is nothing worth saying
+        line = 'SECRET_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"'
+        self.assertEqual([], self.scan(line))
+
+
+class TestRedaction(unittest.TestCase):
+    """A scan log must never become a second copy of the secret."""
+
+    def test_value_is_never_reproduced(self):
+        for value in (FAKE_AWS_KEY, FAKE_GITHUB_PAT, "short"):
+            with self.subTest(value=value):
+                self.assertNotIn(value, redact(value))
+                self.assertIn("*", redact(value))
+
+    def test_findings_do_not_carry_the_raw_value(self):
+        rules = yara.compile(RULES_FILE)
+        for finding in scan_line(rules, "sample.py", 1, f'KEY = "{FAKE_AWS_KEY}"'):
+            self.assertNotIn(FAKE_AWS_KEY, repr(finding))
 
 
 if __name__ == "__main__":
