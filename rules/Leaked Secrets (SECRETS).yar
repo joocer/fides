@@ -24,6 +24,50 @@
 
 import "math"
 
+/*
+    Credentials that are structurally real but belong to nobody: vendors
+    publish them in their own documentation, so they turn up in any repo
+    that has a test exercising that vendor.
+
+    This rule detects rather than hides. A line it matches is still scanned
+    by every other rule; the scanner suppresses those findings and reports
+    the suppression, so an allowlisted line is visibly accounted for instead
+    of silently absent. Putting the exclusion in a rule condition would make
+    a dead pattern and a deliberately ignored credential look identical.
+
+    An `importance` of "ignored" is what marks a rule as an allowlist.
+*/
+rule SECRETS00 : KNOWN_PUBLIC
+{
+    meta:
+        author = "Joocer"
+        description = "Known Public Credential"
+        timestamp = "2026-08-23"
+        version = "0.01"
+        importance = "ignored"
+
+    strings:
+        /*
+            Azurite (the Azure Storage emulator) ships one hard-coded account
+            key, published in Microsoft's own documentation and identical in
+            every install. It is structurally a storage key but is not a
+            secret, and it appears in any repo that runs storage tests.
+        */
+        $known_public_azurite = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+
+        /*
+            The credential pair AWS publishes in its own SigV4 documentation.
+            Every signing test in every language reproduces it, because the
+            documented test vectors only verify against these exact values.
+            Structurally a key pair, but not anyone's key pair.
+        */
+        $known_public_aws_example_id = "AKIAIOSFODNN7EXAMPLE"
+        $known_public_aws_example_secret = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+
+    condition:
+        any of them
+}
+
 rule SECRETS01 : HIGH_ENTROPY_STRING
 {
     meta:
@@ -113,16 +157,8 @@ rule SECRETS04 : CLOUD_CREDENTIALS
         $azure_sas_token = /\bsig=[0-9A-Za-z%]{43,53}%3D/
         $azure_ad_secret = /\b[0-9A-Za-z_\-~.]{3}8Q~[0-9A-Za-z_\-~.]{34}\b/
 
-        /*
-            Azurite (the Azure Storage emulator) ships one hard-coded account
-            key, published in Microsoft's own documentation and identical in
-            every install. It is structurally a storage key but is not a
-            secret, and it appears in any repo that runs storage tests.
-        */
-        $known_public_azurite = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
-
     condition:
-        any of ($aws*, $gcp*, $azure*) and not $known_public_azurite
+        any of ($aws*, $gcp*, $azure*)
 }
 
 rule SECRETS05 : SCM_AND_PACKAGE_TOKENS
