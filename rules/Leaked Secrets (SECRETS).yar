@@ -135,8 +135,8 @@ rule SECRETS04 : CLOUD_CREDENTIALS
     meta:
         author = "Joocer"
         description = "Cloud Provider Credential"
-        timestamp = "2026-08-15"
-        version = "0.01"
+        timestamp = "2026-09-19"
+        version = "0.02"
         importance = "high"
 
     strings:
@@ -157,8 +157,52 @@ rule SECRETS04 : CLOUD_CREDENTIALS
         $azure_sas_token = /\bsig=[0-9A-Za-z%]{43,53}%3D/
         $azure_ad_secret = /\b[0-9A-Za-z_\-~.]{3}8Q~[0-9A-Za-z_\-~.]{34}\b/
 
+        /*
+            Hetzner Cloud -- 64 characters of mixed-case alphanumeric with no
+            prefix of any kind. There is nothing in the token itself to match
+            on, so the anchor has to be the assignment context, in the same
+            style as $aws_secret_key. The 32-character form covers the DNS
+            API, which issues shorter tokens under the same env var names.
+        */
+        $hetzner_token = /(hcloud|hetzner).{0,20}(token|key)['"]?[\s:=]{1,10}['"]?[0-9A-Za-z]{32,64}/ nocase
+
+        /*
+            The Terraform hcloud provider spells it as a bare `token` inside a
+            provider block, so the word "hcloud" is on a different line and the
+            context anchor above cannot see it. Matching a bare 64-character
+            quoted value is the only option left, and the overwhelmingly common
+            innocent form of that is a SHA-256 digest -- which $digest_64
+            subtracts. run.py scans a line at a time, so the subtraction is
+            scoped to the line carrying the token.
+        */
+        $hetzner_tf_token = /^\s*token\s*=\s*"[0-9A-Za-z]{64}"/ nocase
+        $digest_64 = /\b[0-9a-f]{64}\b/
+
+        // DigitalOcean -- dop_ personal, doo_ OAuth, dor_ refresh
+        $digitalocean_token = /\bdo[opr]_v1_[0-9a-f]{64}\b/
+        $digitalocean_spaces_key = /\bDO00[0-9A-Z]{16}\b/
+
+        // Linode -- personal access tokens are 64 lowercase hex, which is
+        // indistinguishable from a digest, so context only.
+        $linode_token = /linode.{0,20}(token|key)['"]?[\s:=]{1,10}['"]?[0-9a-f]{64}/ nocase
+
+        // Scaleway -- access keys carry a prefix, secret keys are bare UUIDs
+        $scaleway_access_key = /\bSCW[0-9A-Z]{17}\b/
+        $scaleway_secret_key = /scw.{0,20}secret_?key['"]?[\s:=]{1,10}['"]?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/ nocase
+
+        // Cloudflare -- the Origin CA key is the one Cloudflare credential
+        // with a distinctive prefix. API tokens have none; the context form
+        // of those lives in SECRETS08 as $cloudflare_key.
+        $cloudflare_origin_ca_key = /\bv1\.0-[0-9a-f]{24}-[0-9A-Za-z+\/=_\-]{100,}/
+
+        // Fly.io -- macaroon tokens, and the legacy fo1_ access token
+        $flyio_token = /\bFlyV1\s+fm[0-9][a-z]?_[0-9A-Za-z+\/=_\-]{30,}/
+        $flyio_legacy_token = /\bfo1_[0-9A-Za-z_\-]{43,}/
+
     condition:
-        any of ($aws*, $gcp*, $azure*)
+        any of ($aws*, $gcp*, $azure*, $hetzner_token, $digitalocean*,
+                $linode*, $scaleway*, $cloudflare*, $flyio*)
+        or ($hetzner_tf_token and not $digest_64)
 }
 
 rule SECRETS05 : SCM_AND_PACKAGE_TOKENS

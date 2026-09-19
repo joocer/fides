@@ -27,6 +27,9 @@ UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 ALNUM = "abcdefghijklmnopqrstuvwxyz0123456789"
 FAKE_AWS_KEY = "AKIA" + UPPER[:16]
 FAKE_GITHUB_PAT = "ghp_" + (ALNUM * 2)[:36]
+MIXED = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+FAKE_HCLOUD_TOKEN = (MIXED * 2)[:64]
+FAKE_SHA256 = ("0123456789abcdef" * 4)[:64]
 
 
 class TestFidesFunctionality(unittest.TestCase):
@@ -132,6 +135,84 @@ class TestAllowlistReporting(unittest.TestCase):
         # is nothing to excuse, so there is nothing worth saying
         line = 'SECRET_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"'
         self.assertEqual([], self.scan(line))
+
+
+class TestPrefixlessCloudTokens(unittest.TestCase):
+    """
+    Hetzner Cloud and Linode issue tokens with no prefix and no internal
+    structure - 64 characters of alphanumeric and nothing else. Nothing in
+    the token says what it is, so the patterns lean entirely on the
+    assignment context, and the thing that can regress is the context
+    requirement quietly eroding into "any 64-character string".
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.rules = yara.compile(RULES_FILE)
+
+    def scan(self, line):
+        return scan_line(self.rules, "sample.py", 1, line)
+
+    def errors(self, line):
+        return [f for f in self.scan(line) if f["severity"] == "error"]
+
+    def test_hcloud_token_in_env_file_is_found(self):
+        findings = self.errors(f"HCLOUD_TOKEN={FAKE_HCLOUD_TOKEN}")
+        self.assertTrue(findings, "an HCLOUD_TOKEN assignment must be a finding")
+        self.assertEqual("SECRETS04", findings[0]["rule"])
+        self.assertEqual("$hetzner_token", findings[0]["pattern"])
+
+    def test_hetzner_spellings(self):
+        for line in (
+            f'HETZNER_API_TOKEN = "{FAKE_HCLOUD_TOKEN}"',
+            f'hcloud_token: "{FAKE_HCLOUD_TOKEN}"',
+            f"hetzner_cloud_token={FAKE_HCLOUD_TOKEN}",
+        ):
+            with self.subTest(line=line):
+                self.assertTrue(self.errors(line))
+
+    def test_terraform_provider_form_is_found(self):
+        # inside a `provider "hcloud" {}` block the word hcloud is on another
+        # line, so this is matched as a bare 64-character token
+        findings = self.errors(f'  token = "{FAKE_HCLOUD_TOKEN}"')
+        self.assertTrue(findings, "the bare Terraform provider form must be a finding")
+        self.assertEqual("$hetzner_tf_token", findings[0]["pattern"])
+
+    def test_context_is_required(self):
+        """
+        The guard on a prefix-less pattern is the context, and this is the
+        test that fails if it is ever loosened. A 64-character string on its
+        own is a build id, a cache key or a digest far more often than it is
+        a Hetzner token.
+        """
+        for line in (
+            f'BUILD_ID = "{FAKE_HCLOUD_TOKEN}"',
+            f"cache_key = {FAKE_HCLOUD_TOKEN}",
+            # a digest assigned to a bare `token` - the shape $hetzner_tf_token
+            # matches, rescued only by the $digest_64 subtraction
+            f'  token = "{FAKE_SHA256}"',
+            # a reference to the secret, not the secret
+            "HCLOUD_TOKEN=${{ secrets.HCLOUD_TOKEN }}",
+            'hcloud_token = os.environ["HCLOUD_TOKEN"]',
+        ):
+            with self.subTest(line=line):
+                self.assertEqual([], self.errors(line))
+
+    def test_prefixed_providers_need_no_context(self):
+        for pattern, line in (
+            ("$digitalocean_token", f"DIGITALOCEAN_TOKEN=dop_v1_{FAKE_SHA256}"),
+            ("$flyio_legacy_token", "FLY_ACCESS_TOKEN=fo1_" + (MIXED * 2)[:43]),
+            ("$scaleway_access_key", "SCW_ACCESS_KEY=SCW" + UPPER[:17]),
+        ):
+            with self.subTest(pattern=pattern):
+                findings = self.errors(line)
+                self.assertTrue(findings)
+                self.assertEqual("SECRETS04", findings[0]["rule"])
+                self.assertIn(pattern, [f["pattern"] for f in findings])
+
+    def test_token_is_not_echoed_into_the_finding(self):
+        for finding in self.scan(f"HCLOUD_TOKEN={FAKE_HCLOUD_TOKEN}"):
+            self.assertNotIn(FAKE_HCLOUD_TOKEN, repr(finding))
 
 
 class TestRedaction(unittest.TestCase):

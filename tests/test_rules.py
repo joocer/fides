@@ -94,6 +94,17 @@ POSITIVE_SAMPLES = {
     "azure_storage_key": "AccountKey=" + _fill(B64, 86) + "==",
     "azure_sas_token": "https://x.blob.core.windows.net/c?sig=" + _fill(ALNUM, 45) + "%3D",
     "azure_ad_secret": "AZURE_CLIENT_SECRET=abc8Q~" + _fill(ALNUM, 34),
+    "hetzner_token": "HCLOUD_TOKEN=" + _fill(ALNUM, 64),
+    # the Terraform provider form: no "hcloud" on the line to anchor to
+    "hetzner_tf_token": '  token = "' + _fill(ALNUM, 64) + '"',
+    "digitalocean_token": "DIGITALOCEAN_TOKEN=dop_v1_" + _fill(HEX, 64),
+    "digitalocean_spaces_key": "SPACES_KEY=DO00" + _fill(UPPER, 16),
+    "linode_token": 'linode_token = "' + _fill(HEX, 64) + '"',
+    "scaleway_access_key": "SCW_ACCESS_KEY=SCW" + _fill(UPPER, 17),
+    "scaleway_secret_key": "SCW_SECRET_KEY=01234567-89ab-cdef-0123-456789abcdef",
+    "cloudflare_origin_ca_key": "v1.0-" + _fill(HEX, 24) + "-" + _fill(ALNUM, 120),
+    "flyio_token": "FLY_API_TOKEN=FlyV1 fm2_" + _fill(ALNUM, 60),
+    "flyio_legacy_token": "FLY_ACCESS_TOKEN=fo1_" + _fill(ALNUM, 43),
     # --- SECRETS05 : SCM and package registries -------------------------
     "github_token": "ghp_" + _fill(ALNUM, 36),
     "github_fine_grained_pat": "github_pat_" + _fill(ALNUM, 22) + "_" + _fill(ALNUM, 59),
@@ -146,7 +157,9 @@ POSITIVE_SAMPLES = {
 
 # $placeholder* strings exist to subtract documentation examples, not to
 # detect secrets, so they are exempt from the positive-sample requirement.
-NON_DETECTION_PATTERNS = {"token"}  # $token drives the entropy rule
+# $digest_64 is a subtraction, not a detection: it exists so a SHA-256 digest
+# on a `token = "..."` line does not read as a Hetzner Terraform token.
+NON_DETECTION_PATTERNS = {"token", "digest_64"}  # $token drives the entropy rule
 
 # Lines that must NOT trigger any non-advisory rule. These are drawn from
 # patterns that genuinely appear across the mabel-dev repositories.
@@ -168,6 +181,20 @@ NEGATIVE_SAMPLES = [
     'password = config.get("password")',
     # hashes and ids that are not credentials
     "sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+    # --- prefix-less 64-character strings -------------------------------
+    # The Hetzner patterns are the only ones in the ruleset that can match a
+    # token carrying no marker of its own. These lines prove the context
+    # requirement is doing the work: without it, every digest and build id
+    # in the estate is a finding.
+    'BUILD_ID = "' + _fill(ALNUM, 64) + '"',
+    "cache_key = " + _fill(ALNUM, 64),
+    'image_digest = "' + _fill(HEX, 64) + '"',
+    # a SHA-256 digest assigned to a bare `token`, which is what
+    # $hetzner_tf_token would otherwise claim
+    '  token = "' + _fill(HEX, 64) + '"',
+    # env var references, not values
+    "HCLOUD_TOKEN=${{ secrets.HCLOUD_TOKEN }}",
+    'hcloud_token = os.environ["HCLOUD_TOKEN"]',
     "commit 94dd038a1b2c3d4e5f60718293a4b5c6d7e8f900",
     "uuid = 550e8400-e29b-41d4-a716-446655440000",
     # documentation placeholders
