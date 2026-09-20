@@ -15,7 +15,14 @@ inputs:
     description: 'Enable verbose output'
     required: false
     default: 'false'
-  
+  json-report:
+    description: >
+      Write findings to this path as JSON, resolved against GITHUB_WORKSPACE.
+      Written before the action fails, so a caller reading it needs
+      `if: always()`. Empty (the default) writes no report.
+    required: false
+    default: ''
+
 runs:
   using: "composite"
   steps:
@@ -41,13 +48,27 @@ runs:
 
     - name: Run Fides
       run: |
-        cd subject
-        if [ "${{ inputs.verbose }}" = "true" ]; then
-          python ../fides/run.py --verbose
-        else
-          python ../fides/run.py
+        # Inputs arrive as env vars, not template interpolation, so a path
+        # with a space or a quote in it cannot break out of the command.
+        FIDES_ARGS=()
+        if [ "$INPUT_VERBOSE" = "true" ]; then
+          FIDES_ARGS+=(--verbose)
         fi
+        if [ -n "$INPUT_JSON_REPORT" ]; then
+          # Resolved before the cd, so a relative path lands beside the
+          # caller's workspace rather than inside the checked-out subject.
+          case "$INPUT_JSON_REPORT" in
+            /*) REPORT="$INPUT_JSON_REPORT" ;;
+            *)  REPORT="${GITHUB_WORKSPACE}/${INPUT_JSON_REPORT}" ;;
+          esac
+          mkdir -p "$(dirname "$REPORT")"
+          FIDES_ARGS+=(--json "$REPORT")
+        fi
+        cd subject
+        python ../fides/run.py "${FIDES_ARGS[@]}"
       shell: bash
       env:
         FIDES_FAIL_ON_SECRETS: ${{ inputs.fail-on-secrets }}
         FIDES_CONFIG_FILE: ${{ inputs.config-file }}
+        INPUT_VERBOSE: ${{ inputs.verbose }}
+        INPUT_JSON_REPORT: ${{ inputs.json-report }}
