@@ -148,7 +148,6 @@ rule SECRETS04 : CLOUD_CREDENTIALS
         // Google Cloud Platform
         $gcp_api_key = /\bAIza[0-9A-Za-z_\-]{35}\b/
         $gcp_oauth_client_secret = /\bGOCSPX-[0-9A-Za-z_\-]{28}\b/
-        $gcp_service_account = /"type"\s*:\s*"service_account"/
         $gcp_private_key_id = /"private_key_id"\s*:\s*"[0-9a-f]{40}"/
         $gcp_legacy_oauth_secret = /"client_secret"\s*:\s*"[0-9A-Za-z_\-]{24}"/
 

@@ -88,7 +88,6 @@ POSITIVE_SAMPLES = {
     "aws_mws_token": "amzn.mws.01234567-89ab-cdef-0123-456789abcdef",
     "gcp_api_key": "GOOGLE_API_KEY=AIza" + _fill(ALNUM, 35),
     "gcp_oauth_client_secret": "GOCSPX-" + _fill(ALNUM, 28),
-    "gcp_service_account": '  "type": "service_account",',
     "gcp_private_key_id": '  "private_key_id": "' + _fill(HEX, 40) + '",',
     "gcp_legacy_oauth_secret": '{"client_secret": "' + _fill(ALNUM, 24) + '"}',
     "azure_storage_key": "AccountKey=" + _fill(B64, 86) + "==",
@@ -226,6 +225,9 @@ NEGATIVE_SAMPLES = [
     "  *password = passphrase;",
     "  identity->Password = dup_passwd.tbyte_ptr;",
     "self.password = password",
+    # A service-account "type" marker is a label, not a secret; a real key
+    # file is caught by $PKCS8_private_key and $gcp_private_key_id.
+    """_stub_kms(monkeypatch, lambda ciphertext, kms_key: b'{"type": "service_account"}')""",
     # NOTE: published-but-credential-shaped constants (Azurite's emulator
     # key, AWS's documented example pair) are deliberately NOT here. They
     # *do* match at the rule level, by design - SECRETS00 marks them and the
